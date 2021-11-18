@@ -30,6 +30,7 @@ If you are using `pre-commit-terraform` already or want to support its developme
 * [Available Hooks](#available-hooks)
 * [Hooks usage notes and examples](#hooks-usage-notes-and-examples)
   * [checkov](#checkov)
+  * [cloudrail](#cloudrail)
   * [infracost_breakdown](#infracost_breakdown)
   * [terraform_docs](#terraform_docs)
   * [terraform_docs_replace (deprecated)](#terraform_docs_replace-deprecated)
@@ -38,6 +39,7 @@ If you are using `pre-commit-terraform` already or want to support its developme
   * [terraform_tflint](#terraform_tflint)
   * [terraform_tfsec](#terraform_tfsec)
   * [terraform_validate](#terraform_validate)
+
 * [Authors](#authors)
 * [License](#license)
 
@@ -49,6 +51,7 @@ If you are using `pre-commit-terraform` already or want to support its developme
 
 * [`pre-commit`](https://pre-commit.com/#install)
 * [`checkov`](https://github.com/bridgecrewio/checkov) required for `checkov` hook.
+* [`cloudrail`](https://github.com/indeni/cloudrail-knowledge) required for `cloudrail` hook.
 * [`terraform-docs`](https://github.com/terraform-docs/terraform-docs) required for `terraform_docs` hook.
 * [`terragrunt`](https://terragrunt.gruntwork.io/docs/getting-started/install/) required for `terragrunt_validate` hook.
 * [`terrascan`](https://github.com/accurics/terrascan) required for `terrascan` hook.
@@ -81,6 +84,7 @@ docker build -t pre-commit \
     --build-arg TERRASCAN_VERSION=1.10.0 \
     --build-arg TFLINT_VERSION=0.31.0 \
     --build-arg TFSEC_VERSION=latest \
+    --build-arg CLOUDRAIL_VERSION=latest \
     .
 ```
 
@@ -108,7 +112,7 @@ sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt install -y python3.7 python3-pip
 python3 -m pip install --upgrade pip
 pip3 install --no-cache-dir pre-commit
-python3.7 -m pip install -U checkov
+python3.7 -m pip install -U checkov cloudrail
 curl -L "$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | grep -o -E -m 1 "https://.+?-linux-amd64.tar.gz")" > terraform-docs.tgz && tar -xzf terraform-docs.tgz && rm terraform-docs.tgz && chmod +x terraform-docs && sudo mv terraform-docs /usr/bin/
 curl -L "$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep -o -E -m 1 "https://.+?_linux_amd64.zip")" > tflint.zip && unzip tflint.zip && rm tflint.zip && sudo mv tflint /usr/bin/
 curl -L "$(curl -s https://api.github.com/repos/aquasecurity/tfsec/releases/latest | grep -o -E -m 1 "https://.+?tfsec-linux-amd64")" > tfsec && chmod +x tfsec && sudo mv tfsec /usr/bin/
@@ -127,7 +131,7 @@ sudo apt update
 sudo apt install -y unzip software-properties-common python3 python3-pip
 python3 -m pip install --upgrade pip
 pip3 install --no-cache-dir pre-commit
-pip3 install --no-cache-dir checkov
+pip3 install --no-cache-dir checkov cloudrail
 curl -L "$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | grep -o -E -m 1 "https://.+?-linux-amd64.tar.gz")" > terraform-docs.tgz && tar -xzf terraform-docs.tgz terraform-docs && rm terraform-docs.tgz && chmod +x terraform-docs && sudo mv terraform-docs /usr/bin/
 curl -L "$(curl -s https://api.github.com/repos/accurics/terrascan/releases/latest | grep -o -E -m 1 "https://.+?_Linux_x86_64.tar.gz")" > terrascan.tar.gz && tar -xzf terrascan.tar.gz terrascan && rm terrascan.tar.gz && sudo mv terrascan /usr/bin/ && terrascan init
 curl -L "$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep -o -E -m 1 "https://.+?_linux_amd64.zip")" > tflint.zip && unzip tflint.zip && rm tflint.zip && sudo mv tflint /usr/bin/
@@ -193,6 +197,7 @@ There are several [pre-commit](https://pre-commit.com/) hooks to keep Terraform 
 | Hook name                                              | Description                                                                                                                                                                                                                                  | Dependencies<br><sup>[Install instructions here](#1-install-dependencies)</sup>      |
 | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | `checkov`                                              | [checkov](https://github.com/bridgecrewio/checkov) static analysis of terraform templates to spot potential security issues. [Hook notes](#checkov)                                                                                          | `checkov`<br>Ubuntu deps: `python3`, `python3-pip`                                   |
+| `cloudrail`                                            | [cloudrail](https://github.com/indeni/cloudrail-knowledge) static + dynamic analysis of terraform templates for identifying potential vulnerabilities. [Hook notes](#cloudrail)                                                              | `cloudrail`                                                                          |
 | `infracost_breakdown`                                  | Check how much your infra costs with [infracost](https://github.com/infracost/infracost). [Hook notes](#infracost_breakdown)                                                                                                                 | `infracost`, `jq`, [Infracost API key](https://www.infracost.io/docs/#2-get-api-key) |
 | `terraform_docs_replace`                               | Runs `terraform-docs` and pipes the output directly to README.md. **DEPRECATED**, see [#248](https://github.com/antonbabenko/pre-commit-terraform/issues/248). [Hook notes](#terraform_docs_replace-deprecated)                              | `python3`, `terraform-docs`                                                          |
 | `terraform_docs_without_`<br>`aggregate_type_defaults` | Inserts input and output documentation into `README.md` without aggregate type defaults. Hook notes same as for [terraform_docs](#terraform_docs)                                                                                            | `terraform-docs`                                                                     |
@@ -223,6 +228,9 @@ For [checkov](https://github.com/bridgecrewio/checkov) you need to specify each 
   ]
 ```
 
+### cloudrail
+
+For more information, visit [docs.cloudrail.app](https://docs.cloudrail.app).
 ### infracost_breakdown
 
 `infracost_breakdown` executes `infracost breakdown` command and compare the estimated costs with those specified in the hook-config. `infracost breakdown` normally runs `terraform init`, `terraform plan`, and calls Infracost Cloud Pricing API (remote version or [self-hosted version](https://www.infracost.io/docs/cloud_pricing_api/self_hosted)).

@@ -34,6 +34,7 @@ ARG TERRAGRUNT_VERSION=${TERRAGRUNT_VERSION:-false}
 ARG TERRASCAN_VERSION=${TERRASCAN_VERSION:-false}
 ARG TFLINT_VERSION=${TFLINT_VERSION:-false}
 ARG TFSEC_VERSION=${TFSEC_VERSION:-false}
+ARG CLOUDRAIL_VERSION=${CLOUDRAIL_VERSION:-false}
 
 
 # Tricky thing to install all tools by set only one arg.
@@ -47,7 +48,8 @@ RUN if [ "$INSTALL_ALL" != "false" ]; then \
         echo "export TERRAGRUNT_VERSION=latest" >> /.env && \
         echo "export TERRASCAN_VERSION=latest" >> /.env && \
         echo "export TFLINT_VERSION=latest" >> /.env && \
-        echo "export TFSEC_VERSION=latest" >> /.env \
+        echo "export TFSEC_VERSION=latest" >> /.env && \
+        echo "export CLOUDRAIL_VERSION=latest" >> /.env \
     ; else \
         touch /.env \
     ; fi
@@ -124,6 +126,15 @@ RUN . /.env && \
     ) && chmod +x tfsec \
     ; fi
 
+# Cloudrail
+RUN . /.env && \
+    if [ "$CLOUDRAIL_VERSION" != "false" ]; then \
+    ( \
+        [ "$CLOUDRAIL_VERSION" = "latest" ] && pip3 install --no-cache-dir cloudrail \
+        || pip3 install --no-cache-dir cloudrail==${CLOUDRAIL_VERSION} \
+    ) \
+    ; fi
+
 # Checking binaries versions and write it to debug file
 RUN . /.env && \
     F=tools_versions_info && \
@@ -136,6 +147,7 @@ RUN . /.env && \
     (if [ "$TERRASCAN_VERSION"      != "false" ]; then echo "terrascan $(./terrascan version)" >> $F; else echo "terrascan SKIPPED" >> $F      ; fi) && \
     (if [ "$TFLINT_VERSION"         != "false" ]; then ./tflint --version >> $F;                      else echo "tflint SKIPPED" >> $F         ; fi) && \
     (if [ "$TFSEC_VERSION"          != "false" ]; then echo "tfsec $(./tfsec --version)" >> $F;       else echo "tfsec SKIPPED" >> $F          ; fi) && \
+    (if [ "$CLOUDRAIL_VERSION"      != "false" ]; then echo "cloudrail $(cloudrail --version)" >> $F; else echo "cloudrail SKIPPED" >> $F      ; fi) && \
     echo -e "\n\n" && cat $F && echo -e "\n\n"
 
 

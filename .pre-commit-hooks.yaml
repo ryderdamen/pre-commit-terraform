@@ -108,3 +108,13 @@
   description: Runs terrascan on Terraform templates.
   language: script
   entry: terrascan.sh
+
+- id: cloudrail
+  name: Cloudrail
+  description: Runs a Cloudrail scan on Terraform templates.
+  entry: cloudrail run --auto-approve
+  language: python
+  pass_filenames: false
+  files: \.tf$
+  exclude: \.+.terraform\/.*$
+  require_serial: true
